@@ -3,80 +3,705 @@ var barChart3BC74B0F16C24B52BB683A8DB772AD92_DEBUG;
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 728:
+/***/ 3050:
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   E: () => (/* binding */ VisualFormattingSettingsModel)
+/* harmony export */ });
+/* harmony import */ var powerbi_visuals_utils_formattingmodel__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(706);
+
+
+var FormattingSettingsCard = powerbi_visuals_utils_formattingmodel__WEBPACK_IMPORTED_MODULE_0__/* .Card */ .Zb;
+var FormattingSettingsModel = powerbi_visuals_utils_formattingmodel__WEBPACK_IMPORTED_MODULE_0__/* .Model */ .Hn;
+class DataPointCardSettings extends FormattingSettingsCard {
+    colored = new powerbi_visuals_utils_formattingmodel__WEBPACK_IMPORTED_MODULE_0__/* .ToggleSwitch */ .Zh({
+        name: "colored",
+        displayName: "Show in colors",
+        value: false,
+    });
+    name = "colorScheme";
+    displayName = "Dependecy tree visual properties";
+    slices = [this.colored];
+}
+class VisualFormattingSettingsModel extends FormattingSettingsModel {
+    dataPointCard = new DataPointCardSettings();
+    cards = [this.dataPointCard];
+}
+
+
+/***/ }),
+
+/***/ 5728:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   u: () => (/* binding */ Visual)
 /* harmony export */ });
+/* harmony import */ var powerbi_visuals_utils_formattingmodel__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(4261);
 /* harmony import */ var d3__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(8976);
+/* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3050);
+
+
 
 
 
 class Visual {
-    root;
-    ellipse;
-    text;
-    padding = 20;
-    target;
-    updateCount;
+    settings;
+    formattingSettings;
+    rootSvg;
+    group;
+    group2;
     constructor(options) {
-        console.log("Visual constructor", options);
-        this.root = d3__WEBPACK_IMPORTED_MODULE_0__/* .select */ .Ys(options.element).append("svg");
-        this.ellipse = this.root
-            .append("ellipse")
-            .style("fill", "rgba(255, 255, 0 , 0.5)")
-            .style("stroke", "rgba(0, 0, 0, 1.0)")
-            .style("stroke-width", "4");
-        this.text = this.root
-            .append("text")
-            .text("HEllo D3")
-            .attr("text-anchor", "middle")
-            .attr("dominant-baseline", "middle")
-            .style("fill", "rgba(255, 255, 0 , 0.5)")
-            .style("stroke", "rgba(0, 0, 0, 1.0)")
-            .style("stroke-width", "4");
-        this.target = options.element;
-        this.updateCount = 0;
+        this.rootSvg = d3__WEBPACK_IMPORTED_MODULE_0__/* .select */ .Ys(options.element).append("svg");
+        this.settings = new powerbi_visuals_utils_formattingmodel__WEBPACK_IMPORTED_MODULE_2__/* ["default"] */ .Z();
     }
     update(options) {
+        this.formattingSettings = this.settings.populateFormattingSettingsModel(_settings__WEBPACK_IMPORTED_MODULE_1__/* .VisualFormattingSettingsModel */ .E, options.dataViews);
+        console.log("for");
+        console.log("Formatting", this.formattingSettings.dataPointCard);
+        if (this.group != null) {
+            this.group.remove();
+        }
+        if (this.group2 != null) {
+            this.group2.remove();
+        }
         console.log("Visual update", options);
-        this.root
-            .attr("width", options.viewport.width)
-            .attr("height", options.viewport.height);
-        var plot = {
-            xOffset: this.padding,
-            yOffset: this.padding,
-            width: options.viewport.width - this.padding * 2,
-            height: options.viewport.height - this.padding * 2,
-        };
-        this.ellipse
-            .attr("cx", plot.xOffset + plot.width * 0.5)
-            .attr("cy", plot.yOffset + plot.height * 0.5)
-            .attr("rx", plot.width * 0.5)
-            .attr("ry", plot.height * 0.5);
-        var fontSizeForWidth = plot.width * 0.2;
-        var fontSizeForHeight = plot.height * 0.35;
-        var fontSize = d3__WEBPACK_IMPORTED_MODULE_0__/* .min */ .VV$([fontSizeForWidth, fontSizeForHeight]);
-        this.text
-            .attr("x", plot.xOffset + plot.width / 2)
-            .attr("y", plot.yOffset + plot.height / 2)
-            .attr("width", plot.width)
-            .attr("height", plot.height)
-            .attr("font-size", fontSize);
+        let data = options.dataViews[0].table.rows.map((d) => {
+            return {
+                source: d[0],
+                target: d[1],
+                value: parseFloat(d[2]),
+            };
+        });
+        const names = d3__WEBPACK_IMPORTED_MODULE_0__/* .sort */ .DYV(d3__WEBPACK_IMPORTED_MODULE_0__/* .union */ .G0j(data.map((d) => d.source), data.map((d) => d.target)));
+        const index = new Map(names.map((name, i) => [name, i]));
+        const matrix = Array.from(index, () => new Array(names.length).fill(0));
+        for (const { source, target, value } of data)
+            matrix[index.get(source)][index.get(target)] += value;
+        const width = options.viewport.width;
+        const height = options.viewport.height;
+        this.rootSvg.attr("width", width);
+        this.rootSvg.attr("height", height);
+        const innerRadius = Math.min(width, height) * 0.5 - 90;
+        const outerRadius = innerRadius + 10;
+        const chord = d3__WEBPACK_IMPORTED_MODULE_0__/* .chordDirected */ .rKe()
+            .padAngle(10 / innerRadius)
+            .sortSubgroups(d3__WEBPACK_IMPORTED_MODULE_0__/* .descending */ .$1i)
+            .sortChords(d3__WEBPACK_IMPORTED_MODULE_0__/* .descending */ .$1i);
+        const arc = d3__WEBPACK_IMPORTED_MODULE_0__/* .arc */ .Nb1().innerRadius(innerRadius).outerRadius(outerRadius);
+        const ribbon = d3__WEBPACK_IMPORTED_MODULE_0__/* .ribbonArrow */ .tQZ()
+            .radius(innerRadius - 1)
+            .padAngle(1 / innerRadius);
+        const colors = d3__WEBPACK_IMPORTED_MODULE_0__/* .quantize */ .q$2(this.formattingSettings.dataPointCard.colored.value
+            ? d3__WEBPACK_IMPORTED_MODULE_0__/* .interpolateRainbow */ .ICD
+            : d3__WEBPACK_IMPORTED_MODULE_0__/* .interpolateGreys */ .A_t, names.length);
+        const chords = chord(matrix);
+        this.rootSvg
+            .attr("width", width)
+            .attr("height", height)
+            .attr("viewBox", [-width / 2, -height / 2, width, height])
+            .attr("style", "width: 100%; height: auto; font: 10px sans-serif;");
+        this.group = this.rootSvg.append("g");
+        const group = this.group.selectAll().data(chords.groups).join("g");
+        group
+            .append("path")
+            .attr("fill", (d) => colors[d.index])
+            .attr("d", arc);
+        group
+            .append("text")
+            .each((d) => (d.angle = (d.startAngle + d.endAngle) / 2))
+            .attr("dy", "0.35em")
+            .attr("transform", (d) => `
+          rotate(${(d.angle * 180) / Math.PI - 90})
+          translate(${outerRadius + 5})
+          ${d.angle > Math.PI ? "rotate(180)" : ""}
+        `)
+            .attr("text-anchor", (d) => (d.angle > Math.PI ? "end" : null))
+            .text((d) => names[d.index]);
+        group.append("title").text((d) => `${names[d.index]}
+        ${d3__WEBPACK_IMPORTED_MODULE_0__/* .sum */ .Smz(chords, (c) => ((c.source.index === d.index) == true ? 1 : 0) * c.source.value)} outgoing →
+        ${d3__WEBPACK_IMPORTED_MODULE_0__/* .sum */ .Smz(chords, (c) => ((c.target.index === d.index) == true ? 1 : 0) * c.source.value)} incoming ←`);
+        this.group2 = this.rootSvg.append("g");
+        this.group2
+            .attr("fill-opacity", 0.75)
+            .selectAll()
+            .data(chords)
+            .join("path")
+            .style("mix-blend-mode", "multiply")
+            .attr("fill", (d) => colors[d.target.index])
+            .attr("d", ribbon)
+            .append("title")
+            .text((d) => `${names[d.source.index]} → ${names[d.target.index]} ${d.source.value}`);
+    }
+    getFormattingModel() {
+        return this.settings.buildFormattingModel(this.formattingSettings);
     }
 }
 
 
 /***/ }),
 
-/***/ 665:
+/***/ 706:
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Hn: () => (/* binding */ Model),
+/* harmony export */   Zb: () => (/* binding */ Card),
+/* harmony export */   Zh: () => (/* binding */ ToggleSwitch)
+/* harmony export */ });
+/* unused harmony exports SimpleSlice, AlignmentGroup, ColorPicker, NumUpDown, Slider, DatePicker, ItemDropdown, AutoDropdown, DurationPicker, ErrorRangeControl, FieldPicker, ItemFlagsSelection, AutoFlagsSelection, TextInput, TextArea, FontPicker, GradientBar, ImageUpload, ListEditor, ReadOnlyText, ShapeMapSelector, CompositeSlice, FontControl, MarginPadding, Container, ContainerItem */
+/* harmony import */ var _utils_FormattingSettingsUtils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3827);
+/**
+ * Powerbi utils components classes for custom visual formatting pane objects
+ *
+ */
+
+class NamedEntity {
+}
+class Model {
+}
+class Card extends NamedEntity {
+    getFormattingCard(objectName, group, localizationManager) {
+        return {
+            displayName: (localizationManager && this.displayNameKey)
+                ? localizationManager.getDisplayName(this.displayNameKey) : this.displayName,
+            description: (localizationManager && this.descriptionKey)
+                ? localizationManager.getDisplayName(this.descriptionKey) : this.description,
+            groups: [group],
+            uid: objectName,
+            analyticsPane: this.analyticsPane
+        };
+    }
+}
+class SimpleSlice extends NamedEntity {
+    constructor(object) {
+        super();
+        Object.assign(this, object);
+    }
+    getFormattingSlice(objectName, localizationManager) {
+        const controlType = this.type;
+        const propertyName = this.name;
+        const sliceDisplayName = (localizationManager && this.displayNameKey) ? localizationManager.getDisplayName(this.displayNameKey) : this.displayName;
+        const sliceDescription = (localizationManager && this.descriptionKey) ? localizationManager.getDisplayName(this.descriptionKey) : this.description;
+        const componentDisplayName = {
+            displayName: sliceDisplayName,
+            description: sliceDescription,
+            uid: objectName + '-' + propertyName,
+        };
+        return Object.assign(Object.assign({}, componentDisplayName), { control: {
+                type: controlType,
+                properties: this.getFormattingComponent(objectName, localizationManager)
+            } });
+    }
+    getFormattingComponent(objectName, localizationManager) {
+        return {
+            descriptor: _utils_FormattingSettingsUtils__WEBPACK_IMPORTED_MODULE_0__/* .getDescriptor */ .B(objectName, this),
+            value: this.value,
+        };
+    }
+    getRevertToDefaultDescriptor(objectName) {
+        return [{
+                objectName: objectName,
+                propertyName: this.name
+            }];
+    }
+    setPropertiesValues(dataViewObjects, objectName) {
+        var _a;
+        let newValue = (_a = dataViewObjects === null || dataViewObjects === void 0 ? void 0 : dataViewObjects[objectName]) === null || _a === void 0 ? void 0 : _a[this.name];
+        this.value = _utils_FormattingSettingsUtils__WEBPACK_IMPORTED_MODULE_0__/* .getPropertyValue */ .S(this, newValue, this.value);
+    }
+}
+class AlignmentGroup extends (/* unused pure expression or super */ null && (SimpleSlice)) {
+    constructor(object) {
+        super(object);
+        this.type = "AlignmentGroup" /* visuals.FormattingComponent.AlignmentGroup */;
+    }
+    getFormattingComponent(objectName) {
+        return Object.assign(Object.assign({}, super.getFormattingComponent(objectName)), { mode: this.mode, supportsNoSelection: this.supportsNoSelection });
+    }
+}
+class ToggleSwitch extends SimpleSlice {
+    constructor(object) {
+        super(object);
+        this.type = "ToggleSwitch" /* visuals.FormattingComponent.ToggleSwitch */;
+    }
+}
+class ColorPicker extends (/* unused pure expression or super */ null && (SimpleSlice)) {
+    constructor(object) {
+        super(object);
+        this.type = "ColorPicker" /* visuals.FormattingComponent.ColorPicker */;
+    }
+    getFormattingComponent(objectName) {
+        return Object.assign(Object.assign({}, super.getFormattingComponent(objectName)), { defaultColor: this.defaultColor, isNoFillItemSupported: this.isNoFillItemSupported });
+    }
+}
+class NumUpDown extends (/* unused pure expression or super */ null && (SimpleSlice)) {
+    constructor(object) {
+        super(object);
+        this.type = "NumUpDown" /* visuals.FormattingComponent.NumUpDown */;
+    }
+    getFormattingComponent(objectName) {
+        return Object.assign(Object.assign({}, super.getFormattingComponent(objectName)), { options: this.options });
+    }
+}
+class Slider extends (/* unused pure expression or super */ null && (NumUpDown)) {
+    constructor() {
+        super(...arguments);
+        this.type = "Slider" /* visuals.FormattingComponent.Slider */;
+    }
+}
+class DatePicker extends (/* unused pure expression or super */ null && (SimpleSlice)) {
+    constructor(object) {
+        super(object);
+        this.type = "DatePicker" /* visuals.FormattingComponent.DatePicker */;
+    }
+    getFormattingComponent(objectName, localizationManager) {
+        return Object.assign(Object.assign({}, super.getFormattingComponent(objectName)), { placeholder: (localizationManager && this.placeholderKey) ? localizationManager.getDisplayName(this.placeholderKey) : this.placeholder, validators: this.validators });
+    }
+}
+class ItemDropdown extends (/* unused pure expression or super */ null && (SimpleSlice)) {
+    constructor(object) {
+        super(object);
+        this.type = "Dropdown" /* visuals.FormattingComponent.Dropdown */;
+    }
+    getFormattingComponent(objectName) {
+        return Object.assign(Object.assign({}, super.getFormattingComponent(objectName)), { items: this.items });
+    }
+}
+class AutoDropdown extends (/* unused pure expression or super */ null && (SimpleSlice)) {
+    constructor(object) {
+        super(object);
+        this.type = "Dropdown" /* visuals.FormattingComponent.Dropdown */;
+    }
+    getFormattingComponent(objectName) {
+        return Object.assign(Object.assign({}, super.getFormattingComponent(objectName)), { mergeValues: this.mergeValues, filterValues: this.filterValues });
+    }
+}
+class DurationPicker extends (/* unused pure expression or super */ null && (SimpleSlice)) {
+    constructor(object) {
+        super(object);
+        this.type = "DurationPicker" /* visuals.FormattingComponent.DurationPicker */;
+    }
+    getFormattingComponent(objectName) {
+        return Object.assign(Object.assign({}, super.getFormattingComponent(objectName)), { validators: this.validators });
+    }
+}
+class ErrorRangeControl extends (/* unused pure expression or super */ null && (SimpleSlice)) {
+    constructor(object) {
+        super(object);
+        this.type = "ErrorRangeControl" /* visuals.FormattingComponent.ErrorRangeControl */;
+    }
+    getFormattingComponent(objectName) {
+        return Object.assign(Object.assign({}, super.getFormattingComponent(objectName)), { validators: this.validators });
+    }
+}
+class FieldPicker extends (/* unused pure expression or super */ null && (SimpleSlice)) {
+    constructor(object) {
+        super(object);
+        this.type = "FieldPicker" /* visuals.FormattingComponent.FieldPicker */;
+    }
+    getFormattingComponent(objectName) {
+        return Object.assign(Object.assign({}, super.getFormattingComponent(objectName)), { validators: this.validators, allowMultipleValues: this.allowMultipleValues });
+    }
+}
+class ItemFlagsSelection extends (/* unused pure expression or super */ null && (SimpleSlice)) {
+    constructor(object) {
+        super(object);
+        this.type = "FlagsSelection" /* visuals.FormattingComponent.FlagsSelection */;
+    }
+    getFormattingComponent(objectName) {
+        return Object.assign(Object.assign({}, super.getFormattingComponent(objectName)), { items: this.items });
+    }
+}
+class AutoFlagsSelection extends (/* unused pure expression or super */ null && (SimpleSlice)) {
+    constructor() {
+        super(...arguments);
+        this.type = "FlagsSelection" /* visuals.FormattingComponent.FlagsSelection */;
+    }
+}
+class TextInput extends (/* unused pure expression or super */ null && (SimpleSlice)) {
+    constructor(object) {
+        super(object);
+        this.type = "TextInput" /* visuals.FormattingComponent.TextInput */;
+    }
+    getFormattingComponent(objectName) {
+        return Object.assign(Object.assign({}, super.getFormattingComponent(objectName)), { placeholder: this.placeholder });
+    }
+}
+class TextArea extends (/* unused pure expression or super */ null && (TextInput)) {
+    constructor() {
+        super(...arguments);
+        this.type = "TextArea" /* visuals.FormattingComponent.TextArea */;
+    }
+}
+class FontPicker extends (/* unused pure expression or super */ null && (SimpleSlice)) {
+    constructor() {
+        super(...arguments);
+        this.type = "FontPicker" /* visuals.FormattingComponent.FontPicker */;
+    }
+}
+class GradientBar extends (/* unused pure expression or super */ null && (SimpleSlice)) {
+    constructor() {
+        super(...arguments);
+        this.type = "GradientBar" /* visuals.FormattingComponent.GradientBar */;
+    }
+}
+class ImageUpload extends (/* unused pure expression or super */ null && (SimpleSlice)) {
+    constructor() {
+        super(...arguments);
+        this.type = "ImageUpload" /* visuals.FormattingComponent.ImageUpload */;
+    }
+}
+class ListEditor extends (/* unused pure expression or super */ null && (SimpleSlice)) {
+    constructor() {
+        super(...arguments);
+        this.type = "ListEditor" /* visuals.FormattingComponent.ListEditor */;
+    }
+}
+class ReadOnlyText extends (/* unused pure expression or super */ null && (SimpleSlice)) {
+    constructor() {
+        super(...arguments);
+        this.type = "ReadOnlyText" /* visuals.FormattingComponent.ReadOnlyText */;
+    }
+}
+class ShapeMapSelector extends (/* unused pure expression or super */ null && (SimpleSlice)) {
+    constructor(object) {
+        super(object);
+        this.type = "ShapeMapSelector" /* visuals.FormattingComponent.ShapeMapSelector */;
+    }
+    getFormattingComponent(objectName) {
+        return Object.assign(Object.assign({}, super.getFormattingComponent(objectName)), { isAzMapReferenceSelector: this.isAzMapReferenceSelector });
+    }
+}
+class CompositeSlice extends (/* unused pure expression or super */ null && (NamedEntity)) {
+    constructor(object) {
+        super();
+        Object.assign(this, object);
+    }
+    getFormattingSlice(objectName) {
+        const controlType = this.type;
+        const propertyName = this.name;
+        const componentDisplayName = {
+            displayName: this.displayName,
+            description: this.description,
+            uid: objectName + '-' + propertyName,
+        };
+        return Object.assign(Object.assign({}, componentDisplayName), { control: {
+                type: controlType,
+                properties: this.getFormattingComponent(objectName)
+            } });
+    }
+}
+class FontControl extends (/* unused pure expression or super */ null && (CompositeSlice)) {
+    constructor(object) {
+        super(object);
+        this.type = "FontControl" /* visuals.FormattingComponent.FontControl */;
+    }
+    getFormattingComponent(objectName) {
+        var _a, _b, _c;
+        return {
+            fontFamily: this.fontFamily.getFormattingComponent(objectName),
+            fontSize: this.fontSize.getFormattingComponent(objectName),
+            bold: (_a = this.bold) === null || _a === void 0 ? void 0 : _a.getFormattingComponent(objectName),
+            italic: (_b = this.italic) === null || _b === void 0 ? void 0 : _b.getFormattingComponent(objectName),
+            underline: (_c = this.underline) === null || _c === void 0 ? void 0 : _c.getFormattingComponent(objectName)
+        };
+    }
+    getRevertToDefaultDescriptor(objectName) {
+        return this.fontFamily.getRevertToDefaultDescriptor(objectName)
+            .concat(this.fontSize.getRevertToDefaultDescriptor(objectName))
+            .concat(this.bold ? this.bold.getRevertToDefaultDescriptor(objectName) : [])
+            .concat(this.italic ? this.italic.getRevertToDefaultDescriptor(objectName) : [])
+            .concat(this.underline ? this.underline.getRevertToDefaultDescriptor(objectName) : []);
+    }
+    setPropertiesValues(dataViewObjects, objectName) {
+        var _a, _b, _c;
+        this.fontFamily.setPropertiesValues(dataViewObjects, objectName);
+        this.fontSize.setPropertiesValues(dataViewObjects, objectName);
+        (_a = this.bold) === null || _a === void 0 ? void 0 : _a.setPropertiesValues(dataViewObjects, objectName);
+        (_b = this.italic) === null || _b === void 0 ? void 0 : _b.setPropertiesValues(dataViewObjects, objectName);
+        (_c = this.underline) === null || _c === void 0 ? void 0 : _c.setPropertiesValues(dataViewObjects, objectName);
+    }
+}
+class MarginPadding extends (/* unused pure expression or super */ null && (CompositeSlice)) {
+    constructor(object) {
+        super(object);
+        this.type = "MarginPadding" /* visuals.FormattingComponent.MarginPadding */;
+    }
+    getFormattingComponent(objectName) {
+        return {
+            left: this.left.getFormattingComponent(objectName),
+            right: this.right.getFormattingComponent(objectName),
+            top: this.top.getFormattingComponent(objectName),
+            bottom: this.bottom.getFormattingComponent(objectName)
+        };
+    }
+    getRevertToDefaultDescriptor(objectName) {
+        return this.left.getRevertToDefaultDescriptor(objectName)
+            .concat(this.right.getRevertToDefaultDescriptor(objectName))
+            .concat(this.top.getRevertToDefaultDescriptor(objectName))
+            .concat(this.bottom.getRevertToDefaultDescriptor(objectName));
+    }
+    setPropertiesValues(dataViewObjects, objectName) {
+        this.left.setPropertiesValues(dataViewObjects, objectName);
+        this.right.setPropertiesValues(dataViewObjects, objectName);
+        this.top.setPropertiesValues(dataViewObjects, objectName);
+        this.bottom.setPropertiesValues(dataViewObjects, objectName);
+    }
+}
+class Container extends (/* unused pure expression or super */ null && (NamedEntity)) {
+}
+class ContainerItem extends (/* unused pure expression or super */ null && (NamedEntity)) {
+}
+//# sourceMappingURL=FormattingSettingsComponents.js.map
+
+/***/ }),
+
+/***/ 4261:
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Z: () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* unused harmony export FormattingSettingsService */
+class FormattingSettingsService {
+    constructor(localizationManager) {
+        this.localizationManager = localizationManager;
+    }
+    /**
+     * Build visual formatting settings model from metadata dataView
+     *
+     * @param dataViews metadata dataView object
+     * @returns visual formatting settings model
+     */
+    populateFormattingSettingsModel(typeClass, dataViews) {
+        var _a, _b, _c;
+        let defaultSettings = new typeClass();
+        let dataViewObjects = (_b = (_a = dataViews === null || dataViews === void 0 ? void 0 : dataViews[0]) === null || _a === void 0 ? void 0 : _a.metadata) === null || _b === void 0 ? void 0 : _b.objects;
+        if (dataViewObjects) {
+            // loop over each formatting property and set its new value if exists
+            (_c = defaultSettings.cards) === null || _c === void 0 ? void 0 : _c.forEach((card) => {
+                var _a, _b, _c;
+                (_a = card === null || card === void 0 ? void 0 : card.slices) === null || _a === void 0 ? void 0 : _a.forEach((slice) => {
+                    slice === null || slice === void 0 ? void 0 : slice.setPropertiesValues(dataViewObjects, card.name);
+                });
+                (_c = (_b = card === null || card === void 0 ? void 0 : card.container) === null || _b === void 0 ? void 0 : _b.containerItems) === null || _c === void 0 ? void 0 : _c.forEach((containerItem) => {
+                    var _a;
+                    (_a = containerItem === null || containerItem === void 0 ? void 0 : containerItem.slices) === null || _a === void 0 ? void 0 : _a.forEach((slice) => {
+                        slice === null || slice === void 0 ? void 0 : slice.setPropertiesValues(dataViewObjects, card.name);
+                    });
+                });
+            });
+        }
+        return defaultSettings;
+    }
+    /**
+     * Build formatting model by parsing formatting settings model object
+     *
+     * @returns powerbi visual formatting model
+     */
+    buildFormattingModel(formattingSettingsModel) {
+        var _a;
+        let formattingModel = {
+            cards: []
+        };
+        (_a = formattingSettingsModel.cards) === null || _a === void 0 ? void 0 : _a.forEach((card) => {
+            if (!card)
+                return;
+            const objectName = card.name;
+            const groupUid = card.name + "-group";
+            let formattingGroup = {
+                displayName: undefined,
+                slices: [],
+                uid: groupUid
+            };
+            let formattingCard = card.getFormattingCard(objectName, formattingGroup, this.localizationManager);
+            formattingModel.cards.push(formattingCard);
+            // In case formatting model adds data points or top categories (Like when you modify specific visual category color).
+            // these categories use same object name and property name from capabilities and the generated uid will be the same for these formatting categories properties
+            // Solution => Save slice names to modify each slice uid to be unique by adding counter value to the new slice uid
+            const sliceNames = {};
+            // Build formatting container slice for each property
+            if (card.container) {
+                const container = card.container;
+                const containerUid = groupUid + "-container";
+                const formattingContainer = {
+                    displayName: (this.localizationManager && container.displayNameKey)
+                        ? this.localizationManager.getDisplayName(container.displayNameKey) : container.displayName,
+                    description: (this.localizationManager && container.descriptionKey)
+                        ? this.localizationManager.getDisplayName(container.descriptionKey) : container.description,
+                    containerItems: [],
+                    uid: containerUid
+                };
+                container.containerItems.forEach((containerItem) => {
+                    // Build formatting container item object
+                    const containerIemName = containerItem.displayNameKey ? containerItem.displayNameKey : containerItem.displayName;
+                    const containerItemUid = containerUid + containerIemName;
+                    let formattingContainerItem = {
+                        displayName: (this.localizationManager && containerItem.displayNameKey)
+                            ? this.localizationManager.getDisplayName(containerItem.displayNameKey) : containerItem.displayName,
+                        slices: [],
+                        uid: containerItemUid
+                    };
+                    // Build formatting slices and add them to current formatting container item
+                    this.buildFormattingSlices(containerItem.slices, objectName, sliceNames, formattingCard, formattingContainerItem.slices);
+                    formattingContainer.containerItems.push(formattingContainerItem);
+                });
+                formattingGroup.container = formattingContainer;
+            }
+            if (card.slices) {
+                // Build formatting slice for each property
+                this.buildFormattingSlices(card.slices, objectName, sliceNames, formattingCard, formattingGroup.slices);
+            }
+            formattingCard.revertToDefaultDescriptors = this.getRevertToDefaultDescriptor(card);
+        });
+        return formattingModel;
+    }
+    buildFormattingSlices(slices, objectName, sliceNames, formattingCard, formattingSlices) {
+        slices === null || slices === void 0 ? void 0 : slices.forEach((slice) => {
+            let formattingSlice = slice === null || slice === void 0 ? void 0 : slice.getFormattingSlice(objectName, this.localizationManager);
+            if (formattingSlice) {
+                // Modify formatting slice uid if needed
+                if (sliceNames[slice.name] === undefined) {
+                    sliceNames[slice.name] = 0;
+                }
+                else {
+                    sliceNames[slice.name]++;
+                    formattingSlice.uid = `${formattingSlice.uid}-${sliceNames[slice.name]}`;
+                }
+                // Set as topLevelToggle if topLevelToggle boolean was set to true
+                if (slice.topLevelToggle) {
+                    formattingSlice.suppressDisplayName = true;
+                    formattingCard.topLevelToggle = formattingSlice;
+                }
+                else {
+                    formattingSlices.push(formattingSlice);
+                }
+            }
+        });
+    }
+    getRevertToDefaultDescriptor(card) {
+        var _a, _b;
+        // Proceeded slice names are saved to prevent duplicated default descriptors in case of using 
+        // formatting categories & selectors, since they have the same descriptor objectName and propertyName
+        const sliceNames = {};
+        let revertToDefaultDescriptors = [];
+        let cardSlicesDefaultDescriptors = this.getSlicesRevertToDefaultDescriptor(card.name, card.slices, sliceNames);
+        let cardContainerSlicesDefaultDescriptors = [];
+        (_b = (_a = card.container) === null || _a === void 0 ? void 0 : _a.containerItems) === null || _b === void 0 ? void 0 : _b.forEach((containerItem) => {
+            cardContainerSlicesDefaultDescriptors = cardContainerSlicesDefaultDescriptors.concat(this.getSlicesRevertToDefaultDescriptor(card.name, containerItem.slices, sliceNames));
+        });
+        revertToDefaultDescriptors = cardSlicesDefaultDescriptors.concat(cardContainerSlicesDefaultDescriptors);
+        return revertToDefaultDescriptors;
+    }
+    getSlicesRevertToDefaultDescriptor(cardName, slices, sliceNames) {
+        let revertToDefaultDescriptors = [];
+        slices === null || slices === void 0 ? void 0 : slices.forEach((slice) => {
+            if (slice && !sliceNames[slice.name]) {
+                sliceNames[slice.name] = true;
+                revertToDefaultDescriptors = revertToDefaultDescriptors.concat(slice.getRevertToDefaultDescriptor(cardName));
+            }
+        });
+        return revertToDefaultDescriptors;
+    }
+}
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (FormattingSettingsService);
+//# sourceMappingURL=FormattingSettingsService.js.map
+
+/***/ }),
+
+/***/ 3827:
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   B: () => (/* binding */ getDescriptor),
+/* harmony export */   S: () => (/* binding */ getPropertyValue)
+/* harmony export */ });
+/**
+ * Build and return formatting descriptor for simple slice
+ *
+ * @param objectName Object name from capabilities
+ * @param slice formatting simple slice
+ * @returns simple slice formatting descriptor
+ */
+function getDescriptor(objectName, slice) {
+    return {
+        objectName: objectName,
+        propertyName: slice.name,
+        selector: slice.selector,
+        altConstantValueSelector: slice.altConstantSelector,
+        instanceKind: slice.instanceKind
+    };
+}
+/**
+ * Get property value from dataview objects if exists
+ * Else return the default value from formatting settings object
+ *
+ * @param value dataview object value
+ * @param defaultValue formatting settings default value
+ * @returns formatting property value
+ */
+function getPropertyValue(slice, value, defaultValue) {
+    if (value == null || (typeof value === "object" && !value.solid)) {
+        return defaultValue;
+    }
+    if (value.solid) {
+        return { value: value === null || value === void 0 ? void 0 : value.solid.color };
+    }
+    if (slice === null || slice === void 0 ? void 0 : slice.items) {
+        let itemsArray = slice.items;
+        return itemsArray.find(item => item.value == value);
+    }
+    return value;
+}
+//# sourceMappingURL=FormattingSettingsUtils.js.map
+
+/***/ }),
+
+/***/ 9757:
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   VV: () => (/* reexport safe */ _min_js__WEBPACK_IMPORTED_MODULE_0__.Z)
+/* harmony export */   Z: () => (/* binding */ ascending)
 /* harmony export */ });
-/* harmony import */ var _min_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(398);
+function ascending(a, b) {
+  return a == null || b == null ? NaN : a < b ? -1 : a > b ? 1 : a >= b ? 0 : NaN;
+}
+
+
+/***/ }),
+
+/***/ 8837:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Z: () => (/* binding */ descending)
+/* harmony export */ });
+function descending(a, b) {
+  return a == null || b == null ? NaN
+    : b < a ? -1
+    : b > a ? 1
+    : b >= a ? 0
+    : NaN;
+}
+
+
+/***/ }),
+
+/***/ 5665:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   $1: () => (/* reexport safe */ _descending_js__WEBPACK_IMPORTED_MODULE_0__.Z),
+/* harmony export */   DY: () => (/* reexport safe */ _sort_js__WEBPACK_IMPORTED_MODULE_2__.ZP),
+/* harmony export */   G0: () => (/* reexport safe */ _union_js__WEBPACK_IMPORTED_MODULE_3__.Z),
+/* harmony export */   Sm: () => (/* reexport safe */ _sum_js__WEBPACK_IMPORTED_MODULE_1__.Z)
+/* harmony export */ });
+/* harmony import */ var _descending_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(8837);
+/* harmony import */ var _sum_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2255);
+/* harmony import */ var _sort_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(6543);
+/* harmony import */ var _union_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(4519);
 
 
 
@@ -138,31 +763,116 @@ class Visual {
 
 /***/ }),
 
-/***/ 398:
+/***/ 2355:
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   Z: () => (/* binding */ min)
+/* harmony export */   Z: () => (/* binding */ permute)
 /* harmony export */ });
-function min(values, valueof) {
-  let min;
+function permute(source, keys) {
+  return Array.from(keys, key => source[key]);
+}
+
+
+/***/ }),
+
+/***/ 6543:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   ZP: () => (/* binding */ sort)
+/* harmony export */ });
+/* unused harmony exports compareDefined, ascendingDefined */
+/* harmony import */ var _ascending_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9757);
+/* harmony import */ var _permute_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2355);
+
+
+
+function sort(values, ...F) {
+  if (typeof values[Symbol.iterator] !== "function") throw new TypeError("values is not iterable");
+  values = Array.from(values);
+  let [f] = F;
+  if ((f && f.length !== 2) || F.length > 1) {
+    const index = Uint32Array.from(values, (d, i) => i);
+    if (F.length > 1) {
+      F = F.map(f => values.map(f));
+      index.sort((i, j) => {
+        for (const f of F) {
+          const c = ascendingDefined(f[i], f[j]);
+          if (c) return c;
+        }
+      });
+    } else {
+      f = values.map(f);
+      index.sort((i, j) => ascendingDefined(f[i], f[j]));
+    }
+    return (0,_permute_js__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .Z)(values, index);
+  }
+  return values.sort(compareDefined(f));
+}
+
+function compareDefined(compare = _ascending_js__WEBPACK_IMPORTED_MODULE_1__/* ["default"] */ .Z) {
+  if (compare === _ascending_js__WEBPACK_IMPORTED_MODULE_1__/* ["default"] */ .Z) return ascendingDefined;
+  if (typeof compare !== "function") throw new TypeError("compare is not a function");
+  return (a, b) => {
+    const x = compare(a, b);
+    if (x || x === 0) return x;
+    return (compare(b, b) === 0) - (compare(a, a) === 0);
+  };
+}
+
+function ascendingDefined(a, b) {
+  return (a == null || !(a >= a)) - (b == null || !(b >= b)) || (a < b ? -1 : a > b ? 1 : 0);
+}
+
+
+/***/ }),
+
+/***/ 2255:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Z: () => (/* binding */ sum)
+/* harmony export */ });
+function sum(values, valueof) {
+  let sum = 0;
   if (valueof === undefined) {
-    for (const value of values) {
-      if (value != null
-          && (min > value || (min === undefined && value >= value))) {
-        min = value;
+    for (let value of values) {
+      if (value = +value) {
+        sum += value;
       }
     }
   } else {
     let index = -1;
     for (let value of values) {
-      if ((value = valueof(value, ++index, values)) != null
-          && (min > value || (min === undefined && value >= value))) {
-        min = value;
+      if (value = +valueof(value, ++index, values)) {
+        sum += value;
       }
     }
   }
-  return min;
+  return sum;
+}
+
+
+/***/ }),
+
+/***/ 4519:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Z: () => (/* binding */ union)
+/* harmony export */ });
+/* harmony import */ var internmap__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(909);
+
+
+function union(...others) {
+  const set = new internmap__WEBPACK_IMPORTED_MODULE_0__/* .InternSet */ .H();
+  for (const other of others) {
+    for (const o of other) {
+      set.add(o);
+    }
+  }
+  return set;
 }
 
 
@@ -807,14 +1517,367 @@ function brush(dim) {
 
 /***/ }),
 
+/***/ 5890:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   t: () => (/* binding */ slice)
+/* harmony export */ });
+var slice = Array.prototype.slice;
+
+
+/***/ }),
+
+/***/ 5952:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   rK: () => (/* binding */ chordDirected)
+/* harmony export */ });
+/* unused harmony export chordTranspose */
+/* harmony import */ var _math_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6734);
+
+
+function range(i, j) {
+  return Array.from({length: j - i}, (_, k) => i + k);
+}
+
+function compareValue(compare) {
+  return function(a, b) {
+    return compare(
+      a.source.value + a.target.value,
+      b.source.value + b.target.value
+    );
+  };
+}
+
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__() {
+  return chord(false, false);
+}
+
+function chordTranspose() {
+  return chord(false, true);
+}
+
+function chordDirected() {
+  return chord(true, false);
+}
+
+function chord(directed, transpose) {
+  var padAngle = 0,
+      sortGroups = null,
+      sortSubgroups = null,
+      sortChords = null;
+
+  function chord(matrix) {
+    var n = matrix.length,
+        groupSums = new Array(n),
+        groupIndex = range(0, n),
+        chords = new Array(n * n),
+        groups = new Array(n),
+        k = 0, dx;
+
+    matrix = Float64Array.from({length: n * n}, transpose
+        ? (_, i) => matrix[i % n][i / n | 0]
+        : (_, i) => matrix[i / n | 0][i % n]);
+
+    // Compute the scaling factor from value to angle in [0, 2pi].
+    for (let i = 0; i < n; ++i) {
+      let x = 0;
+      for (let j = 0; j < n; ++j) x += matrix[i * n + j] + directed * matrix[j * n + i];
+      k += groupSums[i] = x;
+    }
+    k = (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .max */ .Fp)(0, _math_js__WEBPACK_IMPORTED_MODULE_0__/* .tau */ .BZ - padAngle * n) / k;
+    dx = k ? padAngle : _math_js__WEBPACK_IMPORTED_MODULE_0__/* .tau */ .BZ / n;
+
+    // Compute the angles for each group and constituent chord.
+    {
+      let x = 0;
+      if (sortGroups) groupIndex.sort((a, b) => sortGroups(groupSums[a], groupSums[b]));
+      for (const i of groupIndex) {
+        const x0 = x;
+        if (directed) {
+          const subgroupIndex = range(~n + 1, n).filter(j => j < 0 ? matrix[~j * n + i] : matrix[i * n + j]);
+          if (sortSubgroups) subgroupIndex.sort((a, b) => sortSubgroups(a < 0 ? -matrix[~a * n + i] : matrix[i * n + a], b < 0 ? -matrix[~b * n + i] : matrix[i * n + b]));
+          for (const j of subgroupIndex) {
+            if (j < 0) {
+              const chord = chords[~j * n + i] || (chords[~j * n + i] = {source: null, target: null});
+              chord.target = {index: i, startAngle: x, endAngle: x += matrix[~j * n + i] * k, value: matrix[~j * n + i]};
+            } else {
+              const chord = chords[i * n + j] || (chords[i * n + j] = {source: null, target: null});
+              chord.source = {index: i, startAngle: x, endAngle: x += matrix[i * n + j] * k, value: matrix[i * n + j]};
+            }
+          }
+          groups[i] = {index: i, startAngle: x0, endAngle: x, value: groupSums[i]};
+        } else {
+          const subgroupIndex = range(0, n).filter(j => matrix[i * n + j] || matrix[j * n + i]);
+          if (sortSubgroups) subgroupIndex.sort((a, b) => sortSubgroups(matrix[i * n + a], matrix[i * n + b]));
+          for (const j of subgroupIndex) {
+            let chord;
+            if (i < j) {
+              chord = chords[i * n + j] || (chords[i * n + j] = {source: null, target: null});
+              chord.source = {index: i, startAngle: x, endAngle: x += matrix[i * n + j] * k, value: matrix[i * n + j]};
+            } else {
+              chord = chords[j * n + i] || (chords[j * n + i] = {source: null, target: null});
+              chord.target = {index: i, startAngle: x, endAngle: x += matrix[i * n + j] * k, value: matrix[i * n + j]};
+              if (i === j) chord.source = chord.target;
+            }
+            if (chord.source && chord.target && chord.source.value < chord.target.value) {
+              const source = chord.source;
+              chord.source = chord.target;
+              chord.target = source;
+            }
+          }
+          groups[i] = {index: i, startAngle: x0, endAngle: x, value: groupSums[i]};
+        }
+        x += dx;
+      }
+    }
+
+    // Remove empty chords.
+    chords = Object.values(chords);
+    chords.groups = groups;
+    return sortChords ? chords.sort(sortChords) : chords;
+  }
+
+  chord.padAngle = function(_) {
+    return arguments.length ? (padAngle = (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .max */ .Fp)(0, _), chord) : padAngle;
+  };
+
+  chord.sortGroups = function(_) {
+    return arguments.length ? (sortGroups = _, chord) : sortGroups;
+  };
+
+  chord.sortSubgroups = function(_) {
+    return arguments.length ? (sortSubgroups = _, chord) : sortSubgroups;
+  };
+
+  chord.sortChords = function(_) {
+    return arguments.length ? (_ == null ? sortChords = null : (sortChords = compareValue(_))._ = _, chord) : sortChords && sortChords._;
+  };
+
+  return chord;
+}
+
+
+/***/ }),
+
+/***/ 7274:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Z: () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__(x) {
+  return function() {
+    return x;
+  };
+}
+
+
+/***/ }),
+
+/***/ 7970:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   rK: () => (/* reexport safe */ _chord_js__WEBPACK_IMPORTED_MODULE_0__.rK),
+/* harmony export */   tQ: () => (/* reexport safe */ _ribbon_js__WEBPACK_IMPORTED_MODULE_1__.t)
+/* harmony export */ });
+/* harmony import */ var _chord_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5952);
+/* harmony import */ var _ribbon_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(649);
+
+
+
+
+/***/ }),
+
+/***/ 6734:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   BZ: () => (/* binding */ tau),
+/* harmony export */   Fp: () => (/* binding */ max),
+/* harmony export */   Ho: () => (/* binding */ epsilon),
+/* harmony export */   O$: () => (/* binding */ sin),
+/* harmony export */   Wn: () => (/* binding */ abs),
+/* harmony export */   mC: () => (/* binding */ cos),
+/* harmony export */   ou: () => (/* binding */ halfPi)
+/* harmony export */ });
+/* unused harmony export pi */
+var abs = Math.abs;
+var cos = Math.cos;
+var sin = Math.sin;
+var pi = Math.PI;
+var halfPi = pi / 2;
+var tau = pi * 2;
+var max = Math.max;
+var epsilon = 1e-12;
+
+
+/***/ }),
+
+/***/ 649:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   t: () => (/* binding */ ribbonArrow)
+/* harmony export */ });
+/* harmony import */ var d3_path__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9906);
+/* harmony import */ var _array_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5890);
+/* harmony import */ var _constant_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(7274);
+/* harmony import */ var _math_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6734);
+
+
+
+
+
+function defaultSource(d) {
+  return d.source;
+}
+
+function defaultTarget(d) {
+  return d.target;
+}
+
+function defaultRadius(d) {
+  return d.radius;
+}
+
+function defaultStartAngle(d) {
+  return d.startAngle;
+}
+
+function defaultEndAngle(d) {
+  return d.endAngle;
+}
+
+function defaultPadAngle() {
+  return 0;
+}
+
+function defaultArrowheadRadius() {
+  return 10;
+}
+
+function ribbon(headRadius) {
+  var source = defaultSource,
+      target = defaultTarget,
+      sourceRadius = defaultRadius,
+      targetRadius = defaultRadius,
+      startAngle = defaultStartAngle,
+      endAngle = defaultEndAngle,
+      padAngle = defaultPadAngle,
+      context = null;
+
+  function ribbon() {
+    var buffer,
+        s = source.apply(this, arguments),
+        t = target.apply(this, arguments),
+        ap = padAngle.apply(this, arguments) / 2,
+        argv = _array_js__WEBPACK_IMPORTED_MODULE_0__/* .slice */ .t.call(arguments),
+        sr = +sourceRadius.apply(this, (argv[0] = s, argv)),
+        sa0 = startAngle.apply(this, argv) - _math_js__WEBPACK_IMPORTED_MODULE_1__/* .halfPi */ .ou,
+        sa1 = endAngle.apply(this, argv) - _math_js__WEBPACK_IMPORTED_MODULE_1__/* .halfPi */ .ou,
+        tr = +targetRadius.apply(this, (argv[0] = t, argv)),
+        ta0 = startAngle.apply(this, argv) - _math_js__WEBPACK_IMPORTED_MODULE_1__/* .halfPi */ .ou,
+        ta1 = endAngle.apply(this, argv) - _math_js__WEBPACK_IMPORTED_MODULE_1__/* .halfPi */ .ou;
+
+    if (!context) context = buffer = (0,d3_path__WEBPACK_IMPORTED_MODULE_2__/* .path */ .ET)();
+
+    if (ap > _math_js__WEBPACK_IMPORTED_MODULE_1__/* .epsilon */ .Ho) {
+      if ((0,_math_js__WEBPACK_IMPORTED_MODULE_1__/* .abs */ .Wn)(sa1 - sa0) > ap * 2 + _math_js__WEBPACK_IMPORTED_MODULE_1__/* .epsilon */ .Ho) sa1 > sa0 ? (sa0 += ap, sa1 -= ap) : (sa0 -= ap, sa1 += ap);
+      else sa0 = sa1 = (sa0 + sa1) / 2;
+      if ((0,_math_js__WEBPACK_IMPORTED_MODULE_1__/* .abs */ .Wn)(ta1 - ta0) > ap * 2 + _math_js__WEBPACK_IMPORTED_MODULE_1__/* .epsilon */ .Ho) ta1 > ta0 ? (ta0 += ap, ta1 -= ap) : (ta0 -= ap, ta1 += ap);
+      else ta0 = ta1 = (ta0 + ta1) / 2;
+    }
+
+    context.moveTo(sr * (0,_math_js__WEBPACK_IMPORTED_MODULE_1__/* .cos */ .mC)(sa0), sr * (0,_math_js__WEBPACK_IMPORTED_MODULE_1__/* .sin */ .O$)(sa0));
+    context.arc(0, 0, sr, sa0, sa1);
+    if (sa0 !== ta0 || sa1 !== ta1) {
+      if (headRadius) {
+        var hr = +headRadius.apply(this, arguments), tr2 = tr - hr, ta2 = (ta0 + ta1) / 2;
+        context.quadraticCurveTo(0, 0, tr2 * (0,_math_js__WEBPACK_IMPORTED_MODULE_1__/* .cos */ .mC)(ta0), tr2 * (0,_math_js__WEBPACK_IMPORTED_MODULE_1__/* .sin */ .O$)(ta0));
+        context.lineTo(tr * (0,_math_js__WEBPACK_IMPORTED_MODULE_1__/* .cos */ .mC)(ta2), tr * (0,_math_js__WEBPACK_IMPORTED_MODULE_1__/* .sin */ .O$)(ta2));
+        context.lineTo(tr2 * (0,_math_js__WEBPACK_IMPORTED_MODULE_1__/* .cos */ .mC)(ta1), tr2 * (0,_math_js__WEBPACK_IMPORTED_MODULE_1__/* .sin */ .O$)(ta1));
+      } else {
+        context.quadraticCurveTo(0, 0, tr * (0,_math_js__WEBPACK_IMPORTED_MODULE_1__/* .cos */ .mC)(ta0), tr * (0,_math_js__WEBPACK_IMPORTED_MODULE_1__/* .sin */ .O$)(ta0));
+        context.arc(0, 0, tr, ta0, ta1);
+      }
+    }
+    context.quadraticCurveTo(0, 0, sr * (0,_math_js__WEBPACK_IMPORTED_MODULE_1__/* .cos */ .mC)(sa0), sr * (0,_math_js__WEBPACK_IMPORTED_MODULE_1__/* .sin */ .O$)(sa0));
+    context.closePath();
+
+    if (buffer) return context = null, buffer + "" || null;
+  }
+
+  if (headRadius) ribbon.headRadius = function(_) {
+    return arguments.length ? (headRadius = typeof _ === "function" ? _ : (0,_constant_js__WEBPACK_IMPORTED_MODULE_3__/* ["default"] */ .Z)(+_), ribbon) : headRadius;
+  };
+
+  ribbon.radius = function(_) {
+    return arguments.length ? (sourceRadius = targetRadius = typeof _ === "function" ? _ : (0,_constant_js__WEBPACK_IMPORTED_MODULE_3__/* ["default"] */ .Z)(+_), ribbon) : sourceRadius;
+  };
+
+  ribbon.sourceRadius = function(_) {
+    return arguments.length ? (sourceRadius = typeof _ === "function" ? _ : (0,_constant_js__WEBPACK_IMPORTED_MODULE_3__/* ["default"] */ .Z)(+_), ribbon) : sourceRadius;
+  };
+
+  ribbon.targetRadius = function(_) {
+    return arguments.length ? (targetRadius = typeof _ === "function" ? _ : (0,_constant_js__WEBPACK_IMPORTED_MODULE_3__/* ["default"] */ .Z)(+_), ribbon) : targetRadius;
+  };
+
+  ribbon.startAngle = function(_) {
+    return arguments.length ? (startAngle = typeof _ === "function" ? _ : (0,_constant_js__WEBPACK_IMPORTED_MODULE_3__/* ["default"] */ .Z)(+_), ribbon) : startAngle;
+  };
+
+  ribbon.endAngle = function(_) {
+    return arguments.length ? (endAngle = typeof _ === "function" ? _ : (0,_constant_js__WEBPACK_IMPORTED_MODULE_3__/* ["default"] */ .Z)(+_), ribbon) : endAngle;
+  };
+
+  ribbon.padAngle = function(_) {
+    return arguments.length ? (padAngle = typeof _ === "function" ? _ : (0,_constant_js__WEBPACK_IMPORTED_MODULE_3__/* ["default"] */ .Z)(+_), ribbon) : padAngle;
+  };
+
+  ribbon.source = function(_) {
+    return arguments.length ? (source = _, ribbon) : source;
+  };
+
+  ribbon.target = function(_) {
+    return arguments.length ? (target = _, ribbon) : target;
+  };
+
+  ribbon.context = function(_) {
+    return arguments.length ? ((context = _ == null ? null : _), ribbon) : context;
+  };
+
+  return ribbon;
+}
+
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__() {
+  return ribbon();
+}
+
+function ribbonArrow() {
+  return ribbon(defaultArrowheadRadius);
+}
+
+
+/***/ }),
+
 /***/ 4447:
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   B8: () => (/* binding */ rgb),
-/* harmony export */   ZP: () => (/* binding */ color)
+/* harmony export */   Il: () => (/* binding */ Color),
+/* harmony export */   J5: () => (/* binding */ brighter),
+/* harmony export */   SU: () => (/* binding */ rgbConvert),
+/* harmony export */   Ss: () => (/* binding */ Rgb),
+/* harmony export */   ZP: () => (/* binding */ color),
+/* harmony export */   xV: () => (/* binding */ darker)
 /* harmony export */ });
-/* unused harmony exports Color, darker, brighter, rgbConvert, Rgb, hslConvert, hsl */
+/* unused harmony exports hslConvert, hsl */
 /* harmony import */ var _define_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9531);
 
 
@@ -1216,6 +2279,81 @@ function hsl2rgb(h, m1, m2) {
 
 /***/ }),
 
+/***/ 5159:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Z: () => (/* binding */ cubehelix)
+/* harmony export */ });
+/* unused harmony export Cubehelix */
+/* harmony import */ var _define_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9531);
+/* harmony import */ var _color_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4447);
+/* harmony import */ var _math_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5782);
+
+
+
+
+var A = -0.14861,
+    B = +1.78277,
+    C = -0.29227,
+    D = -0.90649,
+    E = +1.97294,
+    ED = E * D,
+    EB = E * B,
+    BC_DA = B * C - D * A;
+
+function cubehelixConvert(o) {
+  if (o instanceof Cubehelix) return new Cubehelix(o.h, o.s, o.l, o.opacity);
+  if (!(o instanceof _color_js__WEBPACK_IMPORTED_MODULE_0__/* .Rgb */ .Ss)) o = (0,_color_js__WEBPACK_IMPORTED_MODULE_0__/* .rgbConvert */ .SU)(o);
+  var r = o.r / 255,
+      g = o.g / 255,
+      b = o.b / 255,
+      l = (BC_DA * b + ED * r - EB * g) / (BC_DA + ED - EB),
+      bl = b - l,
+      k = (E * (g - l) - C * bl) / D,
+      s = Math.sqrt(k * k + bl * bl) / (E * l * (1 - l)), // NaN if l=0 or l=1
+      h = s ? Math.atan2(k, bl) * _math_js__WEBPACK_IMPORTED_MODULE_1__/* .degrees */ .R - 120 : NaN;
+  return new Cubehelix(h < 0 ? h + 360 : h, s, l, o.opacity);
+}
+
+function cubehelix(h, s, l, opacity) {
+  return arguments.length === 1 ? cubehelixConvert(h) : new Cubehelix(h, s, l, opacity == null ? 1 : opacity);
+}
+
+function Cubehelix(h, s, l, opacity) {
+  this.h = +h;
+  this.s = +s;
+  this.l = +l;
+  this.opacity = +opacity;
+}
+
+(0,_define_js__WEBPACK_IMPORTED_MODULE_2__/* ["default"] */ .Z)(Cubehelix, cubehelix, (0,_define_js__WEBPACK_IMPORTED_MODULE_2__/* .extend */ .l)(_color_js__WEBPACK_IMPORTED_MODULE_0__/* .Color */ .Il, {
+  brighter(k) {
+    k = k == null ? _color_js__WEBPACK_IMPORTED_MODULE_0__/* .brighter */ .J5 : Math.pow(_color_js__WEBPACK_IMPORTED_MODULE_0__/* .brighter */ .J5, k);
+    return new Cubehelix(this.h, this.s, this.l * k, this.opacity);
+  },
+  darker(k) {
+    k = k == null ? _color_js__WEBPACK_IMPORTED_MODULE_0__/* .darker */ .xV : Math.pow(_color_js__WEBPACK_IMPORTED_MODULE_0__/* .darker */ .xV, k);
+    return new Cubehelix(this.h, this.s, this.l * k, this.opacity);
+  },
+  rgb() {
+    var h = isNaN(this.h) ? 0 : (this.h + 120) * _math_js__WEBPACK_IMPORTED_MODULE_1__/* .radians */ .u,
+        l = +this.l,
+        a = isNaN(this.s) ? 0 : this.s * l * (1 - l),
+        cosh = Math.cos(h),
+        sinh = Math.sin(h);
+    return new _color_js__WEBPACK_IMPORTED_MODULE_0__/* .Rgb */ .Ss(
+      255 * (l + a * (A * cosh + B * sinh)),
+      255 * (l + a * (C * cosh + D * sinh)),
+      255 * (l + a * (E * cosh)),
+      this.opacity
+    );
+  }
+}));
+
+
+/***/ }),
+
 /***/ 9531:
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
@@ -1233,6 +2371,19 @@ function extend(parent, definition) {
   for (var key in definition) prototype[key] = definition[key];
   return prototype;
 }
+
+
+/***/ }),
+
+/***/ 5782:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   R: () => (/* binding */ degrees),
+/* harmony export */   u: () => (/* binding */ radians)
+/* harmony export */ });
+const radians = Math.PI / 180;
+const degrees = 180 / Math.PI;
 
 
 /***/ }),
@@ -1412,9 +2563,9 @@ function basis(t1, v0, v1, v2, v3) {
 
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   ZP: () => (/* binding */ nogamma),
+/* harmony export */   wx: () => (/* binding */ hue),
 /* harmony export */   yi: () => (/* binding */ gamma)
 /* harmony export */ });
-/* unused harmony export hue */
 /* harmony import */ var _constant_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2954);
 
 
@@ -1432,7 +2583,7 @@ function exponential(a, b, y) {
 
 function hue(a, b) {
   var d = b - a;
-  return d ? linear(a, d > 180 || d < -180 ? d - 360 * Math.round(d / 360) : d) : constant(isNaN(a) ? b : a);
+  return d ? linear(a, d > 180 || d < -180 ? d - 360 * Math.round(d / 360) : d) : (0,_constant_js__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .Z)(isNaN(a) ? b : a);
 }
 
 function gamma(y) {
@@ -1460,6 +2611,79 @@ function nogamma(a, b) {
 
 /***/ }),
 
+/***/ 5638:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   B: () => (/* binding */ cubehelixLong)
+/* harmony export */ });
+/* harmony import */ var d3_color__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5159);
+/* harmony import */ var _color_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(8280);
+
+
+
+function cubehelix(hue) {
+  return (function cubehelixGamma(y) {
+    y = +y;
+
+    function cubehelix(start, end) {
+      var h = hue((start = (0,d3_color__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .Z)(start)).h, (end = (0,d3_color__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .Z)(end)).h),
+          s = (0,_color_js__WEBPACK_IMPORTED_MODULE_1__/* ["default"] */ .ZP)(start.s, end.s),
+          l = (0,_color_js__WEBPACK_IMPORTED_MODULE_1__/* ["default"] */ .ZP)(start.l, end.l),
+          opacity = (0,_color_js__WEBPACK_IMPORTED_MODULE_1__/* ["default"] */ .ZP)(start.opacity, end.opacity);
+      return function(t) {
+        start.h = h(t);
+        start.s = s(t);
+        start.l = l(Math.pow(t, y));
+        start.opacity = opacity(t);
+        return start + "";
+      };
+    }
+
+    cubehelix.gamma = cubehelixGamma;
+
+    return cubehelix;
+  })(1);
+}
+
+/* unused harmony default export */ var __WEBPACK_DEFAULT_EXPORT__ = (cubehelix(_color_js__WEBPACK_IMPORTED_MODULE_1__/* .hue */ .wx));
+var cubehelixLong = cubehelix(_color_js__WEBPACK_IMPORTED_MODULE_1__/* ["default"] */ .ZP);
+
+
+/***/ }),
+
+/***/ 4042:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   q$: () => (/* reexport safe */ _quantize_js__WEBPACK_IMPORTED_MODULE_0__.Z)
+/* harmony export */ });
+/* harmony import */ var _quantize_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(614);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/***/ }),
+
 /***/ 8063:
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
@@ -1475,13 +2699,29 @@ function nogamma(a, b) {
 
 /***/ }),
 
+/***/ 614:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Z: () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__(interpolator, n) {
+  var samples = new Array(n);
+  for (var i = 0; i < n; ++i) samples[i] = interpolator(i / (n - 1));
+  return samples;
+}
+
+
+/***/ }),
+
 /***/ 6354:
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   ZP: () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */   ZP: () => (__WEBPACK_DEFAULT_EXPORT__),
+/* harmony export */   hD: () => (/* binding */ rgbBasis)
 /* harmony export */ });
-/* unused harmony exports rgbBasis, rgbBasisClosed */
+/* unused harmony export rgbBasisClosed */
 /* harmony import */ var d3_color__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4447);
 /* harmony import */ var _basis_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(7265);
 /* harmony import */ var _basisClosed_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(6068);
@@ -1759,6 +2999,316 @@ function parseSvg(value) {
   value = value.matrix;
   return (0,_decompose_js__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .Z)(value.a, value.b, value.c, value.d, value.e, value.f);
 }
+
+
+/***/ }),
+
+/***/ 9906:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   ET: () => (/* binding */ path),
+/* harmony export */   y$: () => (/* binding */ Path)
+/* harmony export */ });
+/* unused harmony export pathRound */
+const pi = Math.PI,
+    tau = 2 * pi,
+    epsilon = 1e-6,
+    tauEpsilon = tau - epsilon;
+
+function append(strings) {
+  this._ += strings[0];
+  for (let i = 1, n = strings.length; i < n; ++i) {
+    this._ += arguments[i] + strings[i];
+  }
+}
+
+function appendRound(digits) {
+  let d = Math.floor(digits);
+  if (!(d >= 0)) throw new Error(`invalid digits: ${digits}`);
+  if (d > 15) return append;
+  const k = 10 ** d;
+  return function(strings) {
+    this._ += strings[0];
+    for (let i = 1, n = strings.length; i < n; ++i) {
+      this._ += Math.round(arguments[i] * k) / k + strings[i];
+    }
+  };
+}
+
+class Path {
+  constructor(digits) {
+    this._x0 = this._y0 = // start of current subpath
+    this._x1 = this._y1 = null; // end of current subpath
+    this._ = "";
+    this._append = digits == null ? append : appendRound(digits);
+  }
+  moveTo(x, y) {
+    this._append`M${this._x0 = this._x1 = +x},${this._y0 = this._y1 = +y}`;
+  }
+  closePath() {
+    if (this._x1 !== null) {
+      this._x1 = this._x0, this._y1 = this._y0;
+      this._append`Z`;
+    }
+  }
+  lineTo(x, y) {
+    this._append`L${this._x1 = +x},${this._y1 = +y}`;
+  }
+  quadraticCurveTo(x1, y1, x, y) {
+    this._append`Q${+x1},${+y1},${this._x1 = +x},${this._y1 = +y}`;
+  }
+  bezierCurveTo(x1, y1, x2, y2, x, y) {
+    this._append`C${+x1},${+y1},${+x2},${+y2},${this._x1 = +x},${this._y1 = +y}`;
+  }
+  arcTo(x1, y1, x2, y2, r) {
+    x1 = +x1, y1 = +y1, x2 = +x2, y2 = +y2, r = +r;
+
+    // Is the radius negative? Error.
+    if (r < 0) throw new Error(`negative radius: ${r}`);
+
+    let x0 = this._x1,
+        y0 = this._y1,
+        x21 = x2 - x1,
+        y21 = y2 - y1,
+        x01 = x0 - x1,
+        y01 = y0 - y1,
+        l01_2 = x01 * x01 + y01 * y01;
+
+    // Is this path empty? Move to (x1,y1).
+    if (this._x1 === null) {
+      this._append`M${this._x1 = x1},${this._y1 = y1}`;
+    }
+
+    // Or, is (x1,y1) coincident with (x0,y0)? Do nothing.
+    else if (!(l01_2 > epsilon));
+
+    // Or, are (x0,y0), (x1,y1) and (x2,y2) collinear?
+    // Equivalently, is (x1,y1) coincident with (x2,y2)?
+    // Or, is the radius zero? Line to (x1,y1).
+    else if (!(Math.abs(y01 * x21 - y21 * x01) > epsilon) || !r) {
+      this._append`L${this._x1 = x1},${this._y1 = y1}`;
+    }
+
+    // Otherwise, draw an arc!
+    else {
+      let x20 = x2 - x0,
+          y20 = y2 - y0,
+          l21_2 = x21 * x21 + y21 * y21,
+          l20_2 = x20 * x20 + y20 * y20,
+          l21 = Math.sqrt(l21_2),
+          l01 = Math.sqrt(l01_2),
+          l = r * Math.tan((pi - Math.acos((l21_2 + l01_2 - l20_2) / (2 * l21 * l01))) / 2),
+          t01 = l / l01,
+          t21 = l / l21;
+
+      // If the start tangent is not coincident with (x0,y0), line to.
+      if (Math.abs(t01 - 1) > epsilon) {
+        this._append`L${x1 + t01 * x01},${y1 + t01 * y01}`;
+      }
+
+      this._append`A${r},${r},0,0,${+(y01 * x20 > x01 * y20)},${this._x1 = x1 + t21 * x21},${this._y1 = y1 + t21 * y21}`;
+    }
+  }
+  arc(x, y, r, a0, a1, ccw) {
+    x = +x, y = +y, r = +r, ccw = !!ccw;
+
+    // Is the radius negative? Error.
+    if (r < 0) throw new Error(`negative radius: ${r}`);
+
+    let dx = r * Math.cos(a0),
+        dy = r * Math.sin(a0),
+        x0 = x + dx,
+        y0 = y + dy,
+        cw = 1 ^ ccw,
+        da = ccw ? a0 - a1 : a1 - a0;
+
+    // Is this path empty? Move to (x0,y0).
+    if (this._x1 === null) {
+      this._append`M${x0},${y0}`;
+    }
+
+    // Or, is (x0,y0) not coincident with the previous point? Line to (x0,y0).
+    else if (Math.abs(this._x1 - x0) > epsilon || Math.abs(this._y1 - y0) > epsilon) {
+      this._append`L${x0},${y0}`;
+    }
+
+    // Is this arc empty? We’re done.
+    if (!r) return;
+
+    // Does the angle go the wrong way? Flip the direction.
+    if (da < 0) da = da % tau + tau;
+
+    // Is this a complete circle? Draw two arcs to complete the circle.
+    if (da > tauEpsilon) {
+      this._append`A${r},${r},0,1,${cw},${x - dx},${y - dy}A${r},${r},0,1,${cw},${this._x1 = x0},${this._y1 = y0}`;
+    }
+
+    // Is this arc non-empty? Draw an arc!
+    else if (da > epsilon) {
+      this._append`A${r},${r},0,${+(da >= pi)},${cw},${this._x1 = x + r * Math.cos(a1)},${this._y1 = y + r * Math.sin(a1)}`;
+    }
+  }
+  rect(x, y, w, h) {
+    this._append`M${this._x0 = this._x1 = +x},${this._y0 = this._y1 = +y}h${w = +w}v${+h}h${-w}Z`;
+  }
+  toString() {
+    return this._;
+  }
+}
+
+function path() {
+  return new Path;
+}
+
+// Allow instanceof d3.path
+path.prototype = Path.prototype;
+
+function pathRound(digits = 3) {
+  return new Path(+digits);
+}
+
+
+/***/ }),
+
+/***/ 3253:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Z: () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__(specifier) {
+  var n = specifier.length / 6 | 0, colors = new Array(n), i = 0;
+  while (i < n) colors[i] = "#" + specifier.slice(i * 6, ++i * 6);
+  return colors;
+}
+
+
+/***/ }),
+
+/***/ 537:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   A_: () => (/* reexport safe */ _sequential_single_Greys_js__WEBPACK_IMPORTED_MODULE_0__.Z),
+/* harmony export */   IC: () => (/* reexport safe */ _sequential_multi_rainbow_js__WEBPACK_IMPORTED_MODULE_1__.ZP)
+/* harmony export */ });
+/* harmony import */ var _sequential_single_Greys_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(108);
+/* harmony import */ var _sequential_multi_rainbow_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(1833);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/***/ }),
+
+/***/ 1854:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Z: () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var d3_interpolate__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6354);
+
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (scheme => (0,d3_interpolate__WEBPACK_IMPORTED_MODULE_0__/* .rgbBasis */ .hD)(scheme[scheme.length - 1]));
+
+
+/***/ }),
+
+/***/ 1833:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   ZP: () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* unused harmony exports warm, cool */
+/* harmony import */ var d3_color__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5159);
+/* harmony import */ var d3_interpolate__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5638);
+
+
+
+var warm = (0,d3_interpolate__WEBPACK_IMPORTED_MODULE_0__/* .cubehelixLong */ .B)((0,d3_color__WEBPACK_IMPORTED_MODULE_1__/* ["default"] */ .Z)(-100, 0.75, 0.35), (0,d3_color__WEBPACK_IMPORTED_MODULE_1__/* ["default"] */ .Z)(80, 1.50, 0.8));
+
+var cool = (0,d3_interpolate__WEBPACK_IMPORTED_MODULE_0__/* .cubehelixLong */ .B)((0,d3_color__WEBPACK_IMPORTED_MODULE_1__/* ["default"] */ .Z)(260, 0.75, 0.35), (0,d3_color__WEBPACK_IMPORTED_MODULE_1__/* ["default"] */ .Z)(80, 1.50, 0.8));
+
+var c = (0,d3_color__WEBPACK_IMPORTED_MODULE_1__/* ["default"] */ .Z)();
+
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__(t) {
+  if (t < 0 || t > 1) t -= Math.floor(t);
+  var ts = Math.abs(t - 0.5);
+  c.h = 360 * t - 100;
+  c.s = 1.5 - 1.5 * ts;
+  c.l = 0.8 - 0.9 * ts;
+  return c + "";
+}
+
+
+/***/ }),
+
+/***/ 108:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Z: () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* unused harmony export scheme */
+/* harmony import */ var _colors_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3253);
+/* harmony import */ var _ramp_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(1854);
+
+
+
+var scheme = new Array(3).concat(
+  "f0f0f0bdbdbd636363",
+  "f7f7f7cccccc969696525252",
+  "f7f7f7cccccc969696636363252525",
+  "f7f7f7d9d9d9bdbdbd969696636363252525",
+  "f7f7f7d9d9d9bdbdbd969696737373525252252525",
+  "fffffff0f0f0d9d9d9bdbdbd969696737373525252252525",
+  "fffffff0f0f0d9d9d9bdbdbd969696737373525252252525000000"
+).map(_colors_js__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .Z);
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ((0,_ramp_js__WEBPACK_IMPORTED_MODULE_1__/* ["default"] */ .Z)(scheme));
 
 
 /***/ }),
@@ -3274,6 +4824,438 @@ function empty() {
   return (node.ownerDocument && node.ownerDocument.defaultView) // node is a Node
       || (node.document && node) // node is a Window
       || node.defaultView; // node is a Document
+}
+
+
+/***/ }),
+
+/***/ 6348:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Z: () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _constant_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(309);
+/* harmony import */ var _math_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1978);
+/* harmony import */ var _path_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(8229);
+
+
+
+
+function arcInnerRadius(d) {
+  return d.innerRadius;
+}
+
+function arcOuterRadius(d) {
+  return d.outerRadius;
+}
+
+function arcStartAngle(d) {
+  return d.startAngle;
+}
+
+function arcEndAngle(d) {
+  return d.endAngle;
+}
+
+function arcPadAngle(d) {
+  return d && d.padAngle; // Note: optional!
+}
+
+function intersect(x0, y0, x1, y1, x2, y2, x3, y3) {
+  var x10 = x1 - x0, y10 = y1 - y0,
+      x32 = x3 - x2, y32 = y3 - y2,
+      t = y32 * x10 - x32 * y10;
+  if (t * t < _math_js__WEBPACK_IMPORTED_MODULE_0__/* .epsilon */ .Ho) return;
+  t = (x32 * (y0 - y2) - y32 * (x0 - x2)) / t;
+  return [x0 + t * x10, y0 + t * y10];
+}
+
+// Compute perpendicular offset line of length rc.
+// http://mathworld.wolfram.com/Circle-LineIntersection.html
+function cornerTangents(x0, y0, x1, y1, r1, rc, cw) {
+  var x01 = x0 - x1,
+      y01 = y0 - y1,
+      lo = (cw ? rc : -rc) / (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .sqrt */ ._b)(x01 * x01 + y01 * y01),
+      ox = lo * y01,
+      oy = -lo * x01,
+      x11 = x0 + ox,
+      y11 = y0 + oy,
+      x10 = x1 + ox,
+      y10 = y1 + oy,
+      x00 = (x11 + x10) / 2,
+      y00 = (y11 + y10) / 2,
+      dx = x10 - x11,
+      dy = y10 - y11,
+      d2 = dx * dx + dy * dy,
+      r = r1 - rc,
+      D = x11 * y10 - x10 * y11,
+      d = (dy < 0 ? -1 : 1) * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .sqrt */ ._b)((0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .max */ .Fp)(0, r * r * d2 - D * D)),
+      cx0 = (D * dy - dx * d) / d2,
+      cy0 = (-D * dx - dy * d) / d2,
+      cx1 = (D * dy + dx * d) / d2,
+      cy1 = (-D * dx + dy * d) / d2,
+      dx0 = cx0 - x00,
+      dy0 = cy0 - y00,
+      dx1 = cx1 - x00,
+      dy1 = cy1 - y00;
+
+  // Pick the closer of the two intersection points.
+  // TODO Is there a faster way to determine which intersection to use?
+  if (dx0 * dx0 + dy0 * dy0 > dx1 * dx1 + dy1 * dy1) cx0 = cx1, cy0 = cy1;
+
+  return {
+    cx: cx0,
+    cy: cy0,
+    x01: -ox,
+    y01: -oy,
+    x11: cx0 * (r1 / r - 1),
+    y11: cy0 * (r1 / r - 1)
+  };
+}
+
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__() {
+  var innerRadius = arcInnerRadius,
+      outerRadius = arcOuterRadius,
+      cornerRadius = (0,_constant_js__WEBPACK_IMPORTED_MODULE_1__/* ["default"] */ .Z)(0),
+      padRadius = null,
+      startAngle = arcStartAngle,
+      endAngle = arcEndAngle,
+      padAngle = arcPadAngle,
+      context = null,
+      path = (0,_path_js__WEBPACK_IMPORTED_MODULE_2__/* .withPath */ .d)(arc);
+
+  function arc() {
+    var buffer,
+        r,
+        r0 = +innerRadius.apply(this, arguments),
+        r1 = +outerRadius.apply(this, arguments),
+        a0 = startAngle.apply(this, arguments) - _math_js__WEBPACK_IMPORTED_MODULE_0__/* .halfPi */ .ou,
+        a1 = endAngle.apply(this, arguments) - _math_js__WEBPACK_IMPORTED_MODULE_0__/* .halfPi */ .ou,
+        da = (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .abs */ .Wn)(a1 - a0),
+        cw = a1 > a0;
+
+    if (!context) context = buffer = path();
+
+    // Ensure that the outer radius is always larger than the inner radius.
+    if (r1 < r0) r = r1, r1 = r0, r0 = r;
+
+    // Is it a point?
+    if (!(r1 > _math_js__WEBPACK_IMPORTED_MODULE_0__/* .epsilon */ .Ho)) context.moveTo(0, 0);
+
+    // Or is it a circle or annulus?
+    else if (da > _math_js__WEBPACK_IMPORTED_MODULE_0__/* .tau */ .BZ - _math_js__WEBPACK_IMPORTED_MODULE_0__/* .epsilon */ .Ho) {
+      context.moveTo(r1 * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .cos */ .mC)(a0), r1 * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .sin */ .O$)(a0));
+      context.arc(0, 0, r1, a0, a1, !cw);
+      if (r0 > _math_js__WEBPACK_IMPORTED_MODULE_0__/* .epsilon */ .Ho) {
+        context.moveTo(r0 * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .cos */ .mC)(a1), r0 * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .sin */ .O$)(a1));
+        context.arc(0, 0, r0, a1, a0, cw);
+      }
+    }
+
+    // Or is it a circular or annular sector?
+    else {
+      var a01 = a0,
+          a11 = a1,
+          a00 = a0,
+          a10 = a1,
+          da0 = da,
+          da1 = da,
+          ap = padAngle.apply(this, arguments) / 2,
+          rp = (ap > _math_js__WEBPACK_IMPORTED_MODULE_0__/* .epsilon */ .Ho) && (padRadius ? +padRadius.apply(this, arguments) : (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .sqrt */ ._b)(r0 * r0 + r1 * r1)),
+          rc = (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .min */ .VV)((0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .abs */ .Wn)(r1 - r0) / 2, +cornerRadius.apply(this, arguments)),
+          rc0 = rc,
+          rc1 = rc,
+          t0,
+          t1;
+
+      // Apply padding? Note that since r1 ≥ r0, da1 ≥ da0.
+      if (rp > _math_js__WEBPACK_IMPORTED_MODULE_0__/* .epsilon */ .Ho) {
+        var p0 = (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .asin */ .ZR)(rp / r0 * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .sin */ .O$)(ap)),
+            p1 = (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .asin */ .ZR)(rp / r1 * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .sin */ .O$)(ap));
+        if ((da0 -= p0 * 2) > _math_js__WEBPACK_IMPORTED_MODULE_0__/* .epsilon */ .Ho) p0 *= (cw ? 1 : -1), a00 += p0, a10 -= p0;
+        else da0 = 0, a00 = a10 = (a0 + a1) / 2;
+        if ((da1 -= p1 * 2) > _math_js__WEBPACK_IMPORTED_MODULE_0__/* .epsilon */ .Ho) p1 *= (cw ? 1 : -1), a01 += p1, a11 -= p1;
+        else da1 = 0, a01 = a11 = (a0 + a1) / 2;
+      }
+
+      var x01 = r1 * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .cos */ .mC)(a01),
+          y01 = r1 * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .sin */ .O$)(a01),
+          x10 = r0 * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .cos */ .mC)(a10),
+          y10 = r0 * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .sin */ .O$)(a10);
+
+      // Apply rounded corners?
+      if (rc > _math_js__WEBPACK_IMPORTED_MODULE_0__/* .epsilon */ .Ho) {
+        var x11 = r1 * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .cos */ .mC)(a11),
+            y11 = r1 * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .sin */ .O$)(a11),
+            x00 = r0 * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .cos */ .mC)(a00),
+            y00 = r0 * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .sin */ .O$)(a00),
+            oc;
+
+        // Restrict the corner radius according to the sector angle. If this
+        // intersection fails, it’s probably because the arc is too small, so
+        // disable the corner radius entirely.
+        if (da < _math_js__WEBPACK_IMPORTED_MODULE_0__.pi) {
+          if (oc = intersect(x01, y01, x00, y00, x11, y11, x10, y10)) {
+            var ax = x01 - oc[0],
+                ay = y01 - oc[1],
+                bx = x11 - oc[0],
+                by = y11 - oc[1],
+                kc = 1 / (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .sin */ .O$)((0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .acos */ .Kh)((ax * bx + ay * by) / ((0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .sqrt */ ._b)(ax * ax + ay * ay) * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .sqrt */ ._b)(bx * bx + by * by))) / 2),
+                lc = (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .sqrt */ ._b)(oc[0] * oc[0] + oc[1] * oc[1]);
+            rc0 = (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .min */ .VV)(rc, (r0 - lc) / (kc - 1));
+            rc1 = (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .min */ .VV)(rc, (r1 - lc) / (kc + 1));
+          } else {
+            rc0 = rc1 = 0;
+          }
+        }
+      }
+
+      // Is the sector collapsed to a line?
+      if (!(da1 > _math_js__WEBPACK_IMPORTED_MODULE_0__/* .epsilon */ .Ho)) context.moveTo(x01, y01);
+
+      // Does the sector’s outer ring have rounded corners?
+      else if (rc1 > _math_js__WEBPACK_IMPORTED_MODULE_0__/* .epsilon */ .Ho) {
+        t0 = cornerTangents(x00, y00, x01, y01, r1, rc1, cw);
+        t1 = cornerTangents(x11, y11, x10, y10, r1, rc1, cw);
+
+        context.moveTo(t0.cx + t0.x01, t0.cy + t0.y01);
+
+        // Have the corners merged?
+        if (rc1 < rc) context.arc(t0.cx, t0.cy, rc1, (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .atan2 */ .fv)(t0.y01, t0.x01), (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .atan2 */ .fv)(t1.y01, t1.x01), !cw);
+
+        // Otherwise, draw the two corners and the ring.
+        else {
+          context.arc(t0.cx, t0.cy, rc1, (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .atan2 */ .fv)(t0.y01, t0.x01), (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .atan2 */ .fv)(t0.y11, t0.x11), !cw);
+          context.arc(0, 0, r1, (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .atan2 */ .fv)(t0.cy + t0.y11, t0.cx + t0.x11), (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .atan2 */ .fv)(t1.cy + t1.y11, t1.cx + t1.x11), !cw);
+          context.arc(t1.cx, t1.cy, rc1, (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .atan2 */ .fv)(t1.y11, t1.x11), (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .atan2 */ .fv)(t1.y01, t1.x01), !cw);
+        }
+      }
+
+      // Or is the outer ring just a circular arc?
+      else context.moveTo(x01, y01), context.arc(0, 0, r1, a01, a11, !cw);
+
+      // Is there no inner ring, and it’s a circular sector?
+      // Or perhaps it’s an annular sector collapsed due to padding?
+      if (!(r0 > _math_js__WEBPACK_IMPORTED_MODULE_0__/* .epsilon */ .Ho) || !(da0 > _math_js__WEBPACK_IMPORTED_MODULE_0__/* .epsilon */ .Ho)) context.lineTo(x10, y10);
+
+      // Does the sector’s inner ring (or point) have rounded corners?
+      else if (rc0 > _math_js__WEBPACK_IMPORTED_MODULE_0__/* .epsilon */ .Ho) {
+        t0 = cornerTangents(x10, y10, x11, y11, r0, -rc0, cw);
+        t1 = cornerTangents(x01, y01, x00, y00, r0, -rc0, cw);
+
+        context.lineTo(t0.cx + t0.x01, t0.cy + t0.y01);
+
+        // Have the corners merged?
+        if (rc0 < rc) context.arc(t0.cx, t0.cy, rc0, (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .atan2 */ .fv)(t0.y01, t0.x01), (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .atan2 */ .fv)(t1.y01, t1.x01), !cw);
+
+        // Otherwise, draw the two corners and the ring.
+        else {
+          context.arc(t0.cx, t0.cy, rc0, (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .atan2 */ .fv)(t0.y01, t0.x01), (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .atan2 */ .fv)(t0.y11, t0.x11), !cw);
+          context.arc(0, 0, r0, (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .atan2 */ .fv)(t0.cy + t0.y11, t0.cx + t0.x11), (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .atan2 */ .fv)(t1.cy + t1.y11, t1.cx + t1.x11), cw);
+          context.arc(t1.cx, t1.cy, rc0, (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .atan2 */ .fv)(t1.y11, t1.x11), (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .atan2 */ .fv)(t1.y01, t1.x01), !cw);
+        }
+      }
+
+      // Or is the inner ring just a circular arc?
+      else context.arc(0, 0, r0, a10, a00, cw);
+    }
+
+    context.closePath();
+
+    if (buffer) return context = null, buffer + "" || null;
+  }
+
+  arc.centroid = function() {
+    var r = (+innerRadius.apply(this, arguments) + +outerRadius.apply(this, arguments)) / 2,
+        a = (+startAngle.apply(this, arguments) + +endAngle.apply(this, arguments)) / 2 - _math_js__WEBPACK_IMPORTED_MODULE_0__.pi / 2;
+    return [(0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .cos */ .mC)(a) * r, (0,_math_js__WEBPACK_IMPORTED_MODULE_0__/* .sin */ .O$)(a) * r];
+  };
+
+  arc.innerRadius = function(_) {
+    return arguments.length ? (innerRadius = typeof _ === "function" ? _ : (0,_constant_js__WEBPACK_IMPORTED_MODULE_1__/* ["default"] */ .Z)(+_), arc) : innerRadius;
+  };
+
+  arc.outerRadius = function(_) {
+    return arguments.length ? (outerRadius = typeof _ === "function" ? _ : (0,_constant_js__WEBPACK_IMPORTED_MODULE_1__/* ["default"] */ .Z)(+_), arc) : outerRadius;
+  };
+
+  arc.cornerRadius = function(_) {
+    return arguments.length ? (cornerRadius = typeof _ === "function" ? _ : (0,_constant_js__WEBPACK_IMPORTED_MODULE_1__/* ["default"] */ .Z)(+_), arc) : cornerRadius;
+  };
+
+  arc.padRadius = function(_) {
+    return arguments.length ? (padRadius = _ == null ? null : typeof _ === "function" ? _ : (0,_constant_js__WEBPACK_IMPORTED_MODULE_1__/* ["default"] */ .Z)(+_), arc) : padRadius;
+  };
+
+  arc.startAngle = function(_) {
+    return arguments.length ? (startAngle = typeof _ === "function" ? _ : (0,_constant_js__WEBPACK_IMPORTED_MODULE_1__/* ["default"] */ .Z)(+_), arc) : startAngle;
+  };
+
+  arc.endAngle = function(_) {
+    return arguments.length ? (endAngle = typeof _ === "function" ? _ : (0,_constant_js__WEBPACK_IMPORTED_MODULE_1__/* ["default"] */ .Z)(+_), arc) : endAngle;
+  };
+
+  arc.padAngle = function(_) {
+    return arguments.length ? (padAngle = typeof _ === "function" ? _ : (0,_constant_js__WEBPACK_IMPORTED_MODULE_1__/* ["default"] */ .Z)(+_), arc) : padAngle;
+  };
+
+  arc.context = function(_) {
+    return arguments.length ? ((context = _ == null ? null : _), arc) : context;
+  };
+
+  return arc;
+}
+
+
+/***/ }),
+
+/***/ 309:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Z: () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__(x) {
+  return function constant() {
+    return x;
+  };
+}
+
+
+/***/ }),
+
+/***/ 8285:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Nb: () => (/* reexport safe */ _arc_js__WEBPACK_IMPORTED_MODULE_0__.Z)
+/* harmony export */ });
+/* harmony import */ var _arc_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6348);
+
+
+
+
+ // Note: radialArea is deprecated!
+ // Note: radialLine is deprecated!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/***/ }),
+
+/***/ 1978:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   BZ: () => (/* binding */ tau),
+/* harmony export */   Fp: () => (/* binding */ max),
+/* harmony export */   Ho: () => (/* binding */ epsilon),
+/* harmony export */   Kh: () => (/* binding */ acos),
+/* harmony export */   O$: () => (/* binding */ sin),
+/* harmony export */   VV: () => (/* binding */ min),
+/* harmony export */   Wn: () => (/* binding */ abs),
+/* harmony export */   ZR: () => (/* binding */ asin),
+/* harmony export */   _b: () => (/* binding */ sqrt),
+/* harmony export */   fv: () => (/* binding */ atan2),
+/* harmony export */   mC: () => (/* binding */ cos),
+/* harmony export */   ou: () => (/* binding */ halfPi),
+/* harmony export */   pi: () => (/* binding */ pi)
+/* harmony export */ });
+const abs = Math.abs;
+const atan2 = Math.atan2;
+const cos = Math.cos;
+const max = Math.max;
+const min = Math.min;
+const sin = Math.sin;
+const sqrt = Math.sqrt;
+
+const epsilon = 1e-12;
+const pi = Math.PI;
+const halfPi = pi / 2;
+const tau = 2 * pi;
+
+function acos(x) {
+  return x > 1 ? 0 : x < -1 ? pi : Math.acos(x);
+}
+
+function asin(x) {
+  return x >= 1 ? halfPi : x <= -1 ? -halfPi : Math.asin(x);
+}
+
+
+/***/ }),
+
+/***/ 8229:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   d: () => (/* binding */ withPath)
+/* harmony export */ });
+/* harmony import */ var d3_path__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9906);
+
+
+function withPath(shape) {
+  let digits = 3;
+
+  shape.digits = function(_) {
+    if (!arguments.length) return digits;
+    if (_ == null) {
+      digits = null;
+    } else {
+      const d = Math.floor(_);
+      if (!(d >= 0)) throw new RangeError(`invalid digits: ${_}`);
+      digits = d;
+    }
+    return shape;
+  };
+
+  return () => new d3_path__WEBPACK_IMPORTED_MODULE_0__/* .Path */ .y$(digits);
 }
 
 
@@ -5238,14 +7220,27 @@ function defaultConstrain(transform, extent, translateExtent) {
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   VV$: () => (/* reexport safe */ d3_array__WEBPACK_IMPORTED_MODULE_0__.VV),
-/* harmony export */   Ys: () => (/* reexport safe */ d3_selection__WEBPACK_IMPORTED_MODULE_2__.Ys)
+/* harmony export */   $1i: () => (/* reexport safe */ d3_array__WEBPACK_IMPORTED_MODULE_0__.$1),
+/* harmony export */   A_t: () => (/* reexport safe */ d3_scale_chromatic__WEBPACK_IMPORTED_MODULE_4__.A_),
+/* harmony export */   DYV: () => (/* reexport safe */ d3_array__WEBPACK_IMPORTED_MODULE_0__.DY),
+/* harmony export */   G0j: () => (/* reexport safe */ d3_array__WEBPACK_IMPORTED_MODULE_0__.G0),
+/* harmony export */   ICD: () => (/* reexport safe */ d3_scale_chromatic__WEBPACK_IMPORTED_MODULE_4__.IC),
+/* harmony export */   Nb1: () => (/* reexport safe */ d3_shape__WEBPACK_IMPORTED_MODULE_6__.Nb),
+/* harmony export */   Smz: () => (/* reexport safe */ d3_array__WEBPACK_IMPORTED_MODULE_0__.Sm),
+/* harmony export */   Ys: () => (/* reexport safe */ d3_selection__WEBPACK_IMPORTED_MODULE_5__.Ys),
+/* harmony export */   q$2: () => (/* reexport safe */ d3_interpolate__WEBPACK_IMPORTED_MODULE_3__.q$),
+/* harmony export */   rKe: () => (/* reexport safe */ d3_chord__WEBPACK_IMPORTED_MODULE_2__.rK),
+/* harmony export */   tQZ: () => (/* reexport safe */ d3_chord__WEBPACK_IMPORTED_MODULE_2__.tQ)
 /* harmony export */ });
-/* harmony import */ var d3_array__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(665);
+/* harmony import */ var d3_array__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5665);
 /* harmony import */ var d3_brush__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9961);
-/* harmony import */ var d3_selection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3950);
-/* harmony import */ var d3_transition__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(3399);
-/* harmony import */ var d3_zoom__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(5180);
+/* harmony import */ var d3_chord__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(7970);
+/* harmony import */ var d3_interpolate__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(4042);
+/* harmony import */ var d3_scale_chromatic__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(537);
+/* harmony import */ var d3_selection__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(3950);
+/* harmony import */ var d3_shape__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(8285);
+/* harmony import */ var d3_transition__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(3399);
+/* harmony import */ var d3_zoom__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(5180);
 
 
 
@@ -5276,6 +7271,78 @@ function defaultConstrain(transform, extent, translateExtent) {
 
 
 
+
+
+/***/ }),
+
+/***/ 909:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   H: () => (/* binding */ InternSet)
+/* harmony export */ });
+/* unused harmony export InternMap */
+class InternMap extends (/* unused pure expression or super */ null && (Map)) {
+  constructor(entries, key = keyof) {
+    super();
+    Object.defineProperties(this, {_intern: {value: new Map()}, _key: {value: key}});
+    if (entries != null) for (const [key, value] of entries) this.set(key, value);
+  }
+  get(key) {
+    return super.get(intern_get(this, key));
+  }
+  has(key) {
+    return super.has(intern_get(this, key));
+  }
+  set(key, value) {
+    return super.set(intern_set(this, key), value);
+  }
+  delete(key) {
+    return super.delete(intern_delete(this, key));
+  }
+}
+
+class InternSet extends Set {
+  constructor(values, key = keyof) {
+    super();
+    Object.defineProperties(this, {_intern: {value: new Map()}, _key: {value: key}});
+    if (values != null) for (const value of values) this.add(value);
+  }
+  has(value) {
+    return super.has(intern_get(this, value));
+  }
+  add(value) {
+    return super.add(intern_set(this, value));
+  }
+  delete(value) {
+    return super.delete(intern_delete(this, value));
+  }
+}
+
+function intern_get({_intern, _key}, value) {
+  const key = _key(value);
+  return _intern.has(key) ? _intern.get(key) : value;
+}
+
+function intern_set({_intern, _key}, value) {
+  const key = _key(value);
+  if (_intern.has(key)) return _intern.get(key);
+  _intern.set(key, value);
+  return value;
+}
+
+function intern_delete({_intern, _key}, value) {
+  const key = _key(value);
+  if (_intern.has(key)) {
+    value = _intern.get(key);
+    _intern.delete(key);
+  }
+  return value;
+}
+
+function keyof(value) {
+  return value !== null && typeof value === "object" ? value.valueOf() : value;
+}
 
 
 /***/ })
@@ -5343,13 +7410,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony import */ var _src_visual__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(728);
+/* harmony import */ var _src_visual__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5728);
 
 var powerbiKey = "powerbi";
 var powerbi = window[powerbiKey];
 var barChart3BC74B0F16C24B52BB683A8DB772AD92_DEBUG = {
     name: 'barChart3BC74B0F16C24B52BB683A8DB772AD92_DEBUG',
-    displayName: 'barChart',
+    displayName: 'Dependencies Chart',
     class: 'Visual',
     apiVersion: '5.3.0',
     create: (options) => {

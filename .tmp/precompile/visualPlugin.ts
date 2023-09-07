@@ -7,7 +7,7 @@ var powerbiKey: any = "powerbi";
 var powerbi: any = window[powerbiKey];
 var barChart3BC74B0F16C24B52BB683A8DB772AD92_DEBUG: IVisualPlugin = {
     name: 'barChart3BC74B0F16C24B52BB683A8DB772AD92_DEBUG',
-    displayName: 'barChart',
+    displayName: 'Dependencies Chart',
     class: 'Visual',
     apiVersion: '5.3.0',
     create: (options?: VisualConstructorOptions) => {
