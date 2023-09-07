@@ -4,12 +4,12 @@ import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructor
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import IVisual = powerbi.extensibility.visual.IVisual;
 export declare class Visual implements IVisual {
-    private root;
-    private ellipse;
-    private text;
-    private padding;
-    private target;
-    private updateCount;
+    private settings;
+    private formattingSettings;
+    private rootSvg;
+    private group;
+    private group2;
     constructor(options: VisualConstructorOptions);
     update(options: VisualUpdateOptions): void;
+    getFormattingModel(): powerbi.visuals.FormattingModel;
 }

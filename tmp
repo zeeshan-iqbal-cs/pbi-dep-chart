@@ -1,0 +1,19 @@
+{
+      "categorical": {
+        "categories": {
+          "for": {
+            "in": "source"
+          },
+          "dataReductionAlgorithm": {
+            "top": {}
+          }
+        },
+        "values": {
+            
+          "group": {
+            "by": "target",
+            "select": [{ "bind": { "to": "value" } }]
+          }
+        }
+      }
+    }
